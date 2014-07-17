@@ -118,7 +118,7 @@ namespace yamlconv
                         ByamlNode tree = ByamlNode.FromXml(doc, doc.LastChild, nodes, values, data);
 
                         List<ByamlNode> flat = new List<ByamlNode>();
-                        Queue<ByamlNode> process = new Queue<ByamlNode>();
+                        Stack<ByamlNode> process = new Stack<ByamlNode>();
 
                         List<string> sorted_nodes = new List<string>();
                         sorted_nodes.AddRange(nodes);
@@ -127,31 +127,37 @@ namespace yamlconv
                         sorted_values.AddRange(values);
                         sorted_values.Sort(StringComparer.Ordinal);
 
-                        process.Enqueue(tree);
+                        process.Push(tree);
                         while (process.Count > 0)
                         {
-                            ByamlNode current = process.Dequeue();
+                            ByamlNode current = process.Pop();
                             flat.Add(current);
 
                             if (current.GetType() == typeof(ByamlNode.NamedNode))
                             {
                                 ByamlNode.NamedNode cur = current as ByamlNode.NamedNode;
                                 List<KeyValuePair<int, ByamlNode>> dict = new List<KeyValuePair<int, ByamlNode>>();
+                                Stack<ByamlNode> reverse = new Stack<ByamlNode>();
                                 foreach (var item in cur.Nodes)
                                 {
                                     dict.Add(new KeyValuePair<int, ByamlNode>(sorted_nodes.IndexOf(nodes[item.Key]), item.Value));
-                                    process.Enqueue(item.Value);
+                                    reverse.Push(item.Value);
                                 }
+                                while (reverse.Count > 0)
+                                    process.Push(reverse.Pop());
                                 cur.Nodes.Clear();
                                 foreach (var item in dict)
                                     cur.Nodes.Add(item);
                             }
                             else if (current.GetType() == typeof(ByamlNode.UnamedNode))
                             {
+                                Stack<ByamlNode> reverse = new Stack<ByamlNode>();
                                 foreach (var item in (current as ByamlNode.UnamedNode).Nodes)
                                 {
-                                    process.Enqueue(item);
+                                    reverse.Push(item);
                                 }
+                                while (reverse.Count > 0)
+                                    process.Push(reverse.Pop());
                             }
                             else if (current.GetType() == typeof(ByamlNode.String))
                             {

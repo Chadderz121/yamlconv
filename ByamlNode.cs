@@ -90,7 +90,7 @@ namespace yamlconv
 
             public override void ToXml(XmlDocument yaml, XmlNode node, List<string> nodes, List<string> values, List<byte[]> data)
             {
-                XmlAttribute attr = yaml.CreateAttribute("base64");
+                XmlAttribute attr = yaml.CreateAttribute("type");
                 attr.Value = "data";
                 node.Attributes.Append(attr);
                 node.InnerText = Convert.ToBase64String(data[Value]);
@@ -122,6 +122,10 @@ namespace yamlconv
 
             public override void ToXml(XmlDocument yaml, XmlNode node, List<string> nodes, List<string> values, List<byte[]> data)
             {
+#if FALSE
+                node.Attributes.Append(yaml.CreateAttribute("type"));
+                node.Attributes["type"].Value = "bool";
+#endif
                 node.InnerText = Value.ToString();
             }
         }
@@ -151,6 +155,10 @@ namespace yamlconv
 
             public override void ToXml(XmlDocument yaml, XmlNode node, List<string> nodes, List<string> values, List<byte[]> data)
             {
+#if FALSE
+                node.Attributes.Append(yaml.CreateAttribute("type"));
+                node.Attributes["type"].Value = "int";
+#endif
                 node.InnerText = Value.ToString();
             }
         }
@@ -180,6 +188,10 @@ namespace yamlconv
 
             public override void ToXml(XmlDocument yaml, XmlNode node, List<string> nodes, List<string> values, List<byte[]> data)
             {
+#if FALSE
+                node.Attributes.Append(yaml.CreateAttribute("type"));
+                node.Attributes["type"].Value = "float";
+#endif
                 node.InnerText = Value.ToString() + "f";
             }
         }
@@ -254,6 +266,11 @@ namespace yamlconv
             public override void ToXml(XmlDocument yaml, XmlNode node, List<string> nodes, List<string> values, List<byte[]> data)
             {
                 int i = 0;
+                if (Nodes.Count == 0)
+                {
+                    node.Attributes.Append(yaml.CreateAttribute("type"));
+                    node.Attributes["type"].Value = "unamed";
+                }
                 foreach (var item in Nodes)
                 {
                     XmlElement element = yaml.CreateElement("value");
@@ -330,6 +347,11 @@ namespace yamlconv
 
             public override void ToXml(XmlDocument yaml, XmlNode node, List<string> nodes, List<string> values, List<byte[]> data)
             {
+                if (Nodes.Count == 0)
+                {
+                    node.Attributes.Append(yaml.CreateAttribute("type"));
+                    node.Attributes["type"].Value = "named";
+                }
                 foreach (var item in Nodes)
                 {
                     XmlElement element = yaml.CreateElement(nodes[item.Key]);
@@ -409,9 +431,9 @@ namespace yamlconv
         {
             XmlNode child = xmlNode.FirstChild;
 
-            if (child.NodeType == XmlNodeType.Element)
+            if (child == null || child.NodeType == XmlNodeType.Element)
             {
-                if (child.Name == "value" && child.Attributes["id"] != null)
+                if ((xmlNode.Attributes["type"] != null && xmlNode.Attributes["type"].Value == "unamed") || (child.Name == "value" && child.Attributes["id"] != null))
                 {
                     UnamedNode node = new UnamedNode();
                     foreach (XmlNode item in xmlNode.ChildNodes)
@@ -446,8 +468,6 @@ namespace yamlconv
                             data.Add(xmlNode.InnerText);
                         return new Data(data.IndexOf(xmlNode.InnerText));
                     }
-                    else
-                        throw new InvalidDataException();
                 }
 
                 int value_int;
