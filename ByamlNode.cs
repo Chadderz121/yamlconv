@@ -266,11 +266,8 @@ namespace yamlconv
             public override void ToXml(XmlDocument yaml, XmlNode node, List<string> nodes, List<string> values, List<byte[]> data)
             {
                 int i = 0;
-                if (Nodes.Count == 0)
-                {
-                    node.Attributes.Append(yaml.CreateAttribute("type"));
-                    node.Attributes["type"].Value = "unamed";
-                }
+                node.Attributes.Append(yaml.CreateAttribute("type"));
+                node.Attributes["type"].Value = "array";
                 foreach (var item in Nodes)
                 {
                     XmlElement element = yaml.CreateElement("value");
@@ -347,11 +344,13 @@ namespace yamlconv
 
             public override void ToXml(XmlDocument yaml, XmlNode node, List<string> nodes, List<string> values, List<byte[]> data)
             {
+#if FALSE
                 if (Nodes.Count == 0)
                 {
                     node.Attributes.Append(yaml.CreateAttribute("type"));
                     node.Attributes["type"].Value = "named";
                 }
+#endif
                 foreach (var item in Nodes)
                 {
                     XmlElement element = yaml.CreateElement(nodes[item.Key]);
@@ -433,7 +432,7 @@ namespace yamlconv
 
             if (child == null || child.NodeType == XmlNodeType.Element)
             {
-                if ((xmlNode.Attributes["type"] != null && xmlNode.Attributes["type"].Value == "unamed") || (child.Name == "value" && child.Attributes["id"] != null))
+                if ((xmlNode.Attributes["type"] != null && xmlNode.Attributes["type"].Value == "array") || (child != null && child.Name == "value" && child.Attributes["id"] != null))
                 {
                     UnamedNode node = new UnamedNode();
                     foreach (XmlNode item in xmlNode.ChildNodes)
