@@ -27,6 +27,7 @@ namespace yamlconv
         public long Length { get; set; }
 
         public abstract ByamlNodeType Type { get; }
+        public virtual bool CanBeAttribute { get { return false; } }
 
         public virtual void ToXml(XmlDocument yaml, XmlNode node, List<string> nodes, List<string> values, List<byte[]> data)
         {
@@ -91,9 +92,24 @@ namespace yamlconv
             public override void ToXml(XmlDocument yaml, XmlNode node, List<string> nodes, List<string> values, List<byte[]> data)
             {
                 XmlAttribute attr = yaml.CreateAttribute("type");
-                attr.Value = "data";
+                attr.Value = "path";
                 node.Attributes.Append(attr);
-                node.InnerText = Convert.ToBase64String(data[Value]);
+                using (EndianBinaryReader rd = new EndianBinaryReader(new MemoryStream(data[Value])))
+                {
+                    while (rd.BaseStream.Position != rd.BaseStream.Length)
+                    {
+                        XmlElement point = yaml.CreateElement("point");
+                        point.SetAttribute("x", rd.ReadSingle().ToString() + "f");
+                        point.SetAttribute("y", rd.ReadSingle().ToString() + "f");
+                        point.SetAttribute("z", rd.ReadSingle().ToString() + "f");
+                        point.SetAttribute("nx", rd.ReadSingle().ToString() + "f");
+                        point.SetAttribute("ny", rd.ReadSingle().ToString() + "f");
+                        point.SetAttribute("nz", rd.ReadSingle().ToString() + "f");
+                        point.SetAttribute("val", rd.ReadInt32().ToString());
+                        node.AppendChild(point);
+                    }
+                    rd.Close();
+                }
             }
         }
 
@@ -104,6 +120,10 @@ namespace yamlconv
             public override ByamlNodeType Type
             {
                 get { return ByamlNodeType.Boolean; }
+            }
+            public override bool CanBeAttribute
+            {
+                get { return true; }
             }
 
             public Boolean(EndianBinaryReader reader)
@@ -126,7 +146,7 @@ namespace yamlconv
                 node.Attributes.Append(yaml.CreateAttribute("type"));
                 node.Attributes["type"].Value = "bool";
 #endif
-                node.InnerText = Value.ToString();
+                node.InnerText = Value.ToString().ToLower();
             }
         }
 
@@ -137,6 +157,10 @@ namespace yamlconv
             public override ByamlNodeType Type
             {
                 get { return ByamlNodeType.Int; }
+            }
+            public override bool CanBeAttribute
+            {
+                get { return true; }
             }
 
             public Int(EndianBinaryReader reader)
@@ -170,6 +194,10 @@ namespace yamlconv
             public override ByamlNodeType Type
             {
                 get { return ByamlNodeType.Single; }
+            }
+            public override bool CanBeAttribute
+            {
+                get { return true; }
             }
 
             public Single(EndianBinaryReader reader)
@@ -271,7 +299,6 @@ namespace yamlconv
                 foreach (var item in Nodes)
                 {
                     XmlElement element = yaml.CreateElement("value");
-                    element.SetAttribute("id", i.ToString());
                     item.ToXml(yaml, element, nodes, values, data);
                     node.AppendChild(element);
                     i++;
@@ -353,9 +380,19 @@ namespace yamlconv
 #endif
                 foreach (var item in Nodes)
                 {
-                    XmlElement element = yaml.CreateElement(nodes[item.Key]);
-                    item.Value.ToXml(yaml, element, nodes, values, data);
-                    node.AppendChild(element);
+                    if (item.Value.CanBeAttribute &&
+                        !string.Equals(nodes[item.Key], "type", StringComparison.OrdinalIgnoreCase))
+                    {
+                        XmlAttribute element = yaml.CreateAttribute(nodes[item.Key]);
+                        item.Value.ToXml(yaml, element, nodes, values, data);
+                        node.Attributes.Append(element);
+                    }
+                    else
+                    {
+                        XmlElement element = yaml.CreateElement(nodes[item.Key]);
+                        item.Value.ToXml(yaml, element, nodes, values, data);
+                        node.AppendChild(element);
+                    }
                 }
             }
         }
@@ -429,20 +466,59 @@ namespace yamlconv
         public static ByamlNode FromXml(XmlDocument doc, XmlNode xmlNode, List<string> nodes, List<string> values, List<string> data)
         {
             XmlNode child = xmlNode.FirstChild;
+            while (child != null && child.NodeType == XmlNodeType.Comment)
+                child = child.NextSibling;
 
             if (child == null || child.NodeType == XmlNodeType.Element)
             {
-                if ((xmlNode.Attributes["type"] != null && xmlNode.Attributes["type"].Value == "array") || (child != null && child.Name == "value" && child.Attributes["id"] != null))
+                if (xmlNode.Attributes["type"] != null && xmlNode.Attributes["type"].Value == "array")
                 {
                     UnamedNode node = new UnamedNode();
                     foreach (XmlNode item in xmlNode.ChildNodes)
-                        node.Nodes.Add(FromXml(doc, item, nodes, values, data));
+                        if (item.NodeType == XmlNodeType.Element)
+                            node.Nodes.Add(FromXml(doc, item, nodes, values, data));
                     return node;
+                }
+                else if (xmlNode.Attributes["type"] != null && xmlNode.Attributes["type"].Value == "path")
+                {
+                    string value;
+                    using (MemoryStream ms = new MemoryStream())
+                    {
+                        using (EndianBinaryWriter wr = new EndianBinaryWriter(ms))
+                        {
+                            foreach (XmlNode item in xmlNode.ChildNodes)
+                            {
+                                if (item.NodeType == XmlNodeType.Element && string.Equals(item.Name, "point", StringComparison.OrdinalIgnoreCase))
+                                {
+                                    wr.Write(float.Parse(item.Attributes["x"].Value.Remove(item.Attributes["x"].Value.Length - 1)));
+                                    wr.Write(float.Parse(item.Attributes["y"].Value.Remove(item.Attributes["y"].Value.Length - 1)));
+                                    wr.Write(float.Parse(item.Attributes["z"].Value.Remove(item.Attributes["z"].Value.Length - 1)));
+                                    wr.Write(float.Parse(item.Attributes["nx"].Value.Remove(item.Attributes["nx"].Value.Length - 1)));
+                                    wr.Write(float.Parse(item.Attributes["ny"].Value.Remove(item.Attributes["ny"].Value.Length - 1)));
+                                    wr.Write(float.Parse(item.Attributes["nz"].Value.Remove(item.Attributes["nz"].Value.Length - 1)));
+                                    wr.Write(int.Parse(item.Attributes["val"].Value));
+                                }
+                            }
+                        }
+                        value = Convert.ToBase64String(ms.ToArray());
+                    }
+                    if (!data.Contains(value))
+                        data.Add(value);
+                    return new Data(data.IndexOf(value));
                 }
                 else
                 {
                     NamedNode node = new NamedNode();
                     foreach (XmlNode item in xmlNode.ChildNodes)
+                    {
+                        if (item.NodeType == XmlNodeType.Element)
+                        {
+                            if (!nodes.Contains(item.Name))
+                                nodes.Add(item.Name);
+                            node.Nodes.Add(new KeyValuePair<int, ByamlNode>(nodes.IndexOf(item.Name), FromXml(doc, item, nodes, values, data)));
+                        }
+                    }
+                    foreach (XmlAttribute item in xmlNode.Attributes)
                     {
                         if (!nodes.Contains(item.Name))
                             nodes.Add(item.Name);
@@ -453,19 +529,13 @@ namespace yamlconv
             }
             else
             {
-                if (xmlNode.Attributes["type"] != null)
+                if (xmlNode.Attributes != null && xmlNode.Attributes["type"] != null)
                 {
                     if (xmlNode.Attributes["type"].Value == "string")
                     {
                         if (!values.Contains(xmlNode.InnerText))
                             values.Add(xmlNode.InnerText);
                         return new String(values.IndexOf(xmlNode.InnerText));
-                    }
-                    else if (xmlNode.Attributes["type"].Value == "data")
-                    {
-                        if (!data.Contains(xmlNode.InnerText))
-                            data.Add(xmlNode.InnerText);
-                        return new Data(data.IndexOf(xmlNode.InnerText));
                     }
                 }
 
