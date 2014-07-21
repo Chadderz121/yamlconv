@@ -136,11 +136,11 @@ namespace yamlconv
                             if (current.GetType() == typeof(ByamlNode.NamedNode))
                             {
                                 ByamlNode.NamedNode cur = current as ByamlNode.NamedNode;
-                                List<KeyValuePair<int, ByamlNode>> dict = new List<KeyValuePair<int, ByamlNode>>();
+                                SortedDictionary<int, ByamlNode> dict = new SortedDictionary<int, ByamlNode>();
                                 Stack<ByamlNode> reverse = new Stack<ByamlNode>();
                                 foreach (var item in cur.Nodes)
                                 {
-                                    dict.Add(new KeyValuePair<int, ByamlNode>(sorted_nodes.IndexOf(nodes[item.Key]), item.Value));
+                                    dict.Add(sorted_nodes.IndexOf(nodes[item.Key]), item.Value);
                                     reverse.Push(item.Value);
                                 }
                                 while (reverse.Count > 0)
