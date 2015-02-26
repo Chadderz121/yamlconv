@@ -1,0 +1,48 @@
+yamlconv
+  by Chadderz
+
+Converts between the BYAML file format and XML.
+
+For documentation on the BYAML format see:
+http://mk8.tockdom.com/wiki/BYAML_%28File_Format%29
+
+Conversion
+----------
+
+The conversion procedure begins at the root node. It is encoded as the root
+XML node with name "yaml". Every sub-node is then recursively converted.
+Value nodes may either be converted to XML attributes or XML elements.
+Integers are encoded directly, booleans are encoded as "true" or "false"
+and floats are encoded as the numeric representation followed by an "f".
+A string is encoded as the inner text of an XML element with the attribute
+"type" set to "string". A path is encoded as a series of "point" elements
+with attributes "x", "y", "z", "nx", "ny", "nz" and "val". The container
+element of the path has attribute "type" equal to "path". Finally, arrays
+are encoded as a series of "value" elements with the container having
+attribute "type" equal to "array" and dictionaries are encoded as a series
+of named elements or attributes.
+
+Examples
+--------
+
+The following is an example of the output of yamlconv showing all features
+mentioned above.
+
+    <?xml version="1.0" encoding="utf-8"?>
+    <yaml float_field_example="1.0f" int_field_example="0"
+          bool_field_example="true">
+      <string_field_example type="string">Hello!</string_field_example>
+      <path_example type="path">
+        <point x="0f" y="0f" z="0f" nx="0f" ny="1f" nz="0f" val="0" />
+        <point x="1f" y="0f" z="0f" nx="0f" ny="1f" nz="0f" val="0" />
+      </path_example>
+      <array_example type="array">
+        <value sample_int="0" />
+        <value sample_int="1" />
+      </array_example>
+      <empty_array type="array" />
+      <dictionary_example>
+        <attr type="string">Hi!</attr>
+      </dictionary_example>
+      <empty_dictionary />
+    </yaml>
