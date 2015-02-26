@@ -142,10 +142,6 @@ namespace yamlconv
 
             public override void ToXml(XmlDocument yaml, XmlNode node, List<string> nodes, List<string> values, List<byte[]> data)
             {
-#if FALSE
-                node.Attributes.Append(yaml.CreateAttribute("type"));
-                node.Attributes["type"].Value = "bool";
-#endif
                 node.InnerText = Value.ToString().ToLowerInvariant();
             }
         }
@@ -179,10 +175,6 @@ namespace yamlconv
 
             public override void ToXml(XmlDocument yaml, XmlNode node, List<string> nodes, List<string> values, List<byte[]> data)
             {
-#if FALSE
-                node.Attributes.Append(yaml.CreateAttribute("type"));
-                node.Attributes["type"].Value = "int";
-#endif
                 node.InnerText = Value.ToString(CultureInfo.InvariantCulture);
             }
         }
@@ -216,10 +208,6 @@ namespace yamlconv
 
             public override void ToXml(XmlDocument yaml, XmlNode node, List<string> nodes, List<string> values, List<byte[]> data)
             {
-#if FALSE
-                node.Attributes.Append(yaml.CreateAttribute("type"));
-                node.Attributes["type"].Value = "float";
-#endif
                 node.InnerText = Value.ToString(CultureInfo.InvariantCulture) + "f";
             }
         }
@@ -371,13 +359,6 @@ namespace yamlconv
 
             public override void ToXml(XmlDocument yaml, XmlNode node, List<string> nodes, List<string> values, List<byte[]> data)
             {
-#if FALSE
-                if (Nodes.Count == 0)
-                {
-                    node.Attributes.Append(yaml.CreateAttribute("type"));
-                    node.Attributes["type"].Value = "named";
-                }
-#endif
                 foreach (var item in Nodes)
                 {
                     if (item.Value.CanBeAttribute &&
