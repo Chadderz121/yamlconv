@@ -1,6 +1,6 @@
-﻿using System.Text;
+﻿using System.Collections.Generic;
 using System.Runtime.InteropServices;
-using System.Collections.Generic;
+using System.Text;
 
 namespace System.IO
 {
@@ -28,7 +28,7 @@ namespace System.IO
         {
             if (baseStream == null) throw new ArgumentNullException("baseStream");
             if (!baseStream.CanRead) throw new ArgumentException("base stream is not readable.", "baseStream");
-            
+
             BaseStream = baseStream;
             Endianness = endianness;
         }
@@ -158,7 +158,7 @@ namespace System.IO
                     temp[i] = (sbyte)buffer[i];
                 }
             }
-            
+
             return temp;
         }
 
@@ -168,7 +168,7 @@ namespace System.IO
 
             if (encoding == null) throw new ArgumentNullException("encoding");
 
-            size = GetEncodingSize(encoding);         
+            size = GetEncodingSize(encoding);
             FillBuffer(size, size);
             return encoding.GetChars(buffer, 0, size)[0];
         }
@@ -179,7 +179,7 @@ namespace System.IO
 
             if (encoding == null) throw new ArgumentNullException("encoding");
 
-            size = GetEncodingSize(encoding);   
+            size = GetEncodingSize(encoding);
             FillBuffer(size * count, size);
             return encoding.GetChars(buffer, 0, size * count);
         }
@@ -599,11 +599,11 @@ namespace System.IO
                 using (var wr = new BinaryWriter(ms))
                 {
                     for (int i = 0; i < count; i++)
-			        {
+                    {
                         ms.Seek(0, SeekOrigin.Begin);
                         RunParser(parser, wr);
                         result.SetValue(Marshal.PtrToStructure(Marshal.UnsafeAddrOfPinnedArrayElement(ms.ToArray(), 0), type), i);
-			        }
+                    }
                 }
             }
             return result;

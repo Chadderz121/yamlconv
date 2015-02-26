@@ -529,7 +529,7 @@ namespace yamlconv
                     return new Int(value_int);
                 else if (bool.TryParse(xmlNode.InnerText, out value_bool))
                     return new Boolean(value_bool);
-                else 
+                else
                     throw new InvalidDataException();
             }
         }

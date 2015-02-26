@@ -1,6 +1,6 @@
-﻿using System.Text;
+﻿using System.Collections.Generic;
 using System.Runtime.InteropServices;
-using System.Collections.Generic;
+using System.Text;
 
 namespace System.IO
 {
@@ -605,11 +605,11 @@ namespace System.IO
                 using (var rd = new BinaryReader(ms))
                 {
                     foreach (var structure in structures)
-	                {
+                    {
                         ms.Seek(0, SeekOrigin.Begin);
                         Marshal.StructureToPtr(structure, Marshal.UnsafeAddrOfPinnedArrayElement(data, 0), true);
                         RunParser(parser, rd);
-	                }
+                    }
                 }
             }
         }
