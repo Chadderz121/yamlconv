@@ -116,7 +116,7 @@ namespace yamlconv
 
             tree.ToXml(yaml, root, nodes, values, data);
 
-            using (StreamWriter writer = new StreamWriter(new FileStream(outpath, FileMode.Create)))
+            using (StreamWriter writer = new StreamWriter(new FileStream(outpath, FileMode.Create), Encoding.UTF8))
             {
                 yaml.Save(writer);
             }

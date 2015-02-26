@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.IO;
 using System.Collections.ObjectModel;
+using System.Globalization;
+using System.IO;
+using System.Text;
 using System.Xml;
 
 namespace yamlconv
@@ -99,13 +99,13 @@ namespace yamlconv
                     while (rd.BaseStream.Position != rd.BaseStream.Length)
                     {
                         XmlElement point = yaml.CreateElement("point");
-                        point.SetAttribute("x", rd.ReadSingle().ToString() + "f");
-                        point.SetAttribute("y", rd.ReadSingle().ToString() + "f");
-                        point.SetAttribute("z", rd.ReadSingle().ToString() + "f");
-                        point.SetAttribute("nx", rd.ReadSingle().ToString() + "f");
-                        point.SetAttribute("ny", rd.ReadSingle().ToString() + "f");
-                        point.SetAttribute("nz", rd.ReadSingle().ToString() + "f");
-                        point.SetAttribute("val", rd.ReadInt32().ToString());
+                        point.SetAttribute("x", rd.ReadSingle().ToString(CultureInfo.InvariantCulture) + "f");
+                        point.SetAttribute("y", rd.ReadSingle().ToString(CultureInfo.InvariantCulture) + "f");
+                        point.SetAttribute("z", rd.ReadSingle().ToString(CultureInfo.InvariantCulture) + "f");
+                        point.SetAttribute("nx", rd.ReadSingle().ToString(CultureInfo.InvariantCulture) + "f");
+                        point.SetAttribute("ny", rd.ReadSingle().ToString(CultureInfo.InvariantCulture) + "f");
+                        point.SetAttribute("nz", rd.ReadSingle().ToString(CultureInfo.InvariantCulture) + "f");
+                        point.SetAttribute("val", rd.ReadInt32().ToString(CultureInfo.InvariantCulture));
                         node.AppendChild(point);
                     }
                     rd.Close();
@@ -146,7 +146,7 @@ namespace yamlconv
                 node.Attributes.Append(yaml.CreateAttribute("type"));
                 node.Attributes["type"].Value = "bool";
 #endif
-                node.InnerText = Value.ToString().ToLower();
+                node.InnerText = Value.ToString().ToLowerInvariant();
             }
         }
 
@@ -183,7 +183,7 @@ namespace yamlconv
                 node.Attributes.Append(yaml.CreateAttribute("type"));
                 node.Attributes["type"].Value = "int";
 #endif
-                node.InnerText = Value.ToString();
+                node.InnerText = Value.ToString(CultureInfo.InvariantCulture);
             }
         }
 
@@ -220,7 +220,7 @@ namespace yamlconv
                 node.Attributes.Append(yaml.CreateAttribute("type"));
                 node.Attributes["type"].Value = "float";
 #endif
-                node.InnerText = Value.ToString() + "f";
+                node.InnerText = Value.ToString(CultureInfo.InvariantCulture) + "f";
             }
         }
 
@@ -490,13 +490,13 @@ namespace yamlconv
                             {
                                 if (item.NodeType == XmlNodeType.Element && string.Equals(item.Name, "point", StringComparison.OrdinalIgnoreCase))
                                 {
-                                    wr.Write(float.Parse(item.Attributes["x"].Value.Remove(item.Attributes["x"].Value.Length - 1)));
-                                    wr.Write(float.Parse(item.Attributes["y"].Value.Remove(item.Attributes["y"].Value.Length - 1)));
-                                    wr.Write(float.Parse(item.Attributes["z"].Value.Remove(item.Attributes["z"].Value.Length - 1)));
-                                    wr.Write(float.Parse(item.Attributes["nx"].Value.Remove(item.Attributes["nx"].Value.Length - 1)));
-                                    wr.Write(float.Parse(item.Attributes["ny"].Value.Remove(item.Attributes["ny"].Value.Length - 1)));
-                                    wr.Write(float.Parse(item.Attributes["nz"].Value.Remove(item.Attributes["nz"].Value.Length - 1)));
-                                    wr.Write(int.Parse(item.Attributes["val"].Value));
+                                    wr.Write(float.Parse(item.Attributes["x"].Value.Remove(item.Attributes["x"].Value.Length - 1), CultureInfo.InvariantCulture));
+                                    wr.Write(float.Parse(item.Attributes["y"].Value.Remove(item.Attributes["y"].Value.Length - 1), CultureInfo.InvariantCulture));
+                                    wr.Write(float.Parse(item.Attributes["z"].Value.Remove(item.Attributes["z"].Value.Length - 1), CultureInfo.InvariantCulture));
+                                    wr.Write(float.Parse(item.Attributes["nx"].Value.Remove(item.Attributes["nx"].Value.Length - 1), CultureInfo.InvariantCulture));
+                                    wr.Write(float.Parse(item.Attributes["ny"].Value.Remove(item.Attributes["ny"].Value.Length - 1), CultureInfo.InvariantCulture));
+                                    wr.Write(float.Parse(item.Attributes["nz"].Value.Remove(item.Attributes["nz"].Value.Length - 1), CultureInfo.InvariantCulture));
+                                    wr.Write(int.Parse(item.Attributes["val"].Value, CultureInfo.InvariantCulture));
                                 }
                             }
                         }
@@ -542,8 +542,8 @@ namespace yamlconv
                 int value_int;
                 bool value_bool;
 
-                if (xmlNode.InnerText.EndsWith("f"))
-                    return new Single(float.Parse(xmlNode.InnerText.Remove(xmlNode.InnerText.Length - 1)));
+                if (xmlNode.InnerText.EndsWith("f", StringComparison.OrdinalIgnoreCase))
+                    return new Single(float.Parse(xmlNode.InnerText.Remove(xmlNode.InnerText.Length - 1), CultureInfo.InvariantCulture));
                 else if (int.TryParse(xmlNode.InnerText, out value_int))
                     return new Int(value_int);
                 else if (bool.TryParse(xmlNode.InnerText, out value_bool))
