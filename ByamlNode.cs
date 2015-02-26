@@ -413,7 +413,7 @@ namespace yamlconv
 
         public class BinaryDataList : ByamlNode
         {
-            public Collection<byte[]> Data { get; private set; }
+            public Collection<byte[]> DataList { get; private set; }
 
             public override ByamlNodeType Type
             {
@@ -424,7 +424,7 @@ namespace yamlconv
             {
                 Address = reader.BaseStream.Position;
 
-                Data = new Collection<byte[]>();
+                DataList = new Collection<byte[]>();
 
                 int count = reader.ReadInt32() & 0xffffff;
                 int[] offsets = reader.ReadInt32s(count + 1);
@@ -432,7 +432,7 @@ namespace yamlconv
                 for (int i = 0; i < count; i++)
                 {
                     reader.BaseStream.Seek(Address + offsets[i], SeekOrigin.Begin);
-                    Data.Add(reader.ReadBytes(offsets[i + 1] - offsets[i]));
+                    DataList.Add(reader.ReadBytes(offsets[i + 1] - offsets[i]));
                 }
 
                 Length = reader.BaseStream.Position - Length;
@@ -440,7 +440,7 @@ namespace yamlconv
 
             public BinaryDataList()
             {
-                Data = new Collection<byte[]>();
+                DataList = new Collection<byte[]>();
             }
         }
 

@@ -96,7 +96,7 @@ namespace yamlconv
             if (offsets[2] != 0)
             {
                 reader.BaseStream.Seek(offsets[2], SeekOrigin.Begin);
-                data.AddRange(new ByamlNode.BinaryDataList(reader).Data);
+                data.AddRange(new ByamlNode.BinaryDataList(reader).DataList);
             }
 
             ByamlNode tree;
