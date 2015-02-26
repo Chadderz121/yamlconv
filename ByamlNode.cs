@@ -8,7 +8,7 @@ using System.Xml;
 
 namespace yamlconv
 {
-    public enum ByamlNodeType
+    enum ByamlNodeType
     {
         String = 0xa0,
         Data = 0xa1,

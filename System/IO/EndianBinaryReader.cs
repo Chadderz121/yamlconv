@@ -636,7 +636,7 @@ namespace System.IO
         }
     }
 
-    public enum Endianness
+    enum Endianness
     {
         BigEndian,
         LittleEndian,
