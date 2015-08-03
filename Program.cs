@@ -76,8 +76,14 @@ namespace yamlconv
                 throw new InvalidDataException();
             if (offsets[2] > reader.BaseStream.Length)
                 throw new InvalidDataException();
-            if (offsets[3] > reader.BaseStream.Length)
-                throw new InvalidDataException();
+            if (offsets[3] > reader.BaseStream.Length) {
+                if (offsets[0] == 0x10) {
+                    offsets[3] = offsets[2]; // Splatoon byamls are missing offsets[2]
+                    offsets[2] = 0;
+                } else {
+                    throw new InvalidDataException();
+                }
+            }
 
             List<string> nodes = new List<string>();
             List<string> values = new List<string>();
