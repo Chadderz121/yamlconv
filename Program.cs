@@ -31,14 +31,25 @@ namespace yamlconv
             using (var reader = new EndianBinaryReader(new FileStream(path, FileMode.Open)))
             {
                 string outpath;
+                string magic;
                 bool toyaml;
 
-                if (reader.ReadString(Encoding.ASCII, 2) == "BY")
+                magic = reader.ReadString(Encoding.ASCII, 2);
+                if (magic == "BY")
                 {
                     toyaml = true;
                     outpath = Path.ChangeExtension(path, "xml");
                     if (outpath == path)
                         outpath = path + ".xml";
+                    reader.Endianness = Endianness.BigEndian;
+                }
+                else if (magic == "YB")
+                {
+                    toyaml = true;
+                    outpath = Path.ChangeExtension(path, "xml");
+                    if (outpath == path)
+                        outpath = path + ".xml";
+                    reader.Endianness = Endianness.LittleEndian;
                 }
                 else
                 {
@@ -65,7 +76,9 @@ namespace yamlconv
 
         private static void ConvertFromByaml(EndianBinaryReader reader, string outpath)
         {
-            if (reader.ReadUInt32() != 0x42590001)
+            if (reader.ReadUInt16() != 0x4259)
+                throw new InvalidDataException();
+            if (reader.ReadUInt16() != 0x0001)
                 throw new InvalidDataException();
 
             uint nodeOffset = reader.ReadUInt32();
@@ -125,6 +138,9 @@ namespace yamlconv
             XmlAttribute xmlnsAttribute = yaml.CreateAttribute("xmlns:yamlconv");
             xmlnsAttribute.InnerText = "yamlconv";
             root.Attributes.Append(xmlnsAttribute);
+            XmlAttribute endianAttribute = yaml.CreateAttribute("endianness", "yamlconv");
+            endianAttribute.InnerText = reader.Endianness == Endianness.BigEndian ? "big" : "little";
+            root.Attributes.Append(endianAttribute);
             XmlAttribute offsetCountAttribute = yaml.CreateAttribute("offsetCount", "yamlconv");
             offsetCountAttribute.InnerText = offsetCount.ToString();
             root.Attributes.Append(offsetCountAttribute);
@@ -149,6 +165,10 @@ namespace yamlconv
             uint offsetCount = 4;
             if (doc.LastChild.Attributes["yamlconv:offsetCount"] != null)
                 offsetCount = uint.Parse(doc.LastChild.Attributes["yamlconv:offsetCount"].Value);
+
+            Endianness endianness = Endianness.BigEndian;
+            if (doc.LastChild.Attributes["yamlconv:endianness"] != null)
+                endianness = doc.LastChild.Attributes["yamlconv:endianness"].Value == "little" ? Endianness.LittleEndian : Endianness.BigEndian;
 
             List<string> nodes = new List<string>();
             List<string> values = new List<string>();
@@ -208,13 +228,15 @@ namespace yamlconv
 
             using (EndianBinaryWriter writer = new EndianBinaryWriter(new FileStream(outpath, FileMode.Create)))
             {
+                writer.Endianness = endianness;
                 uint[] off = new uint[offsetCount];
 
                 for (int i = 0; i < 2; i++)
                 {
                     writer.BaseStream.Position = 0;
 
-                    writer.Write(0x42590001);
+                    writer.Write((UInt16)0x4259);
+                    writer.Write((UInt16)0x0001);
                     writer.Write(off, 0, (int)offsetCount);
 
                     if (sorted_nodes.Count > 0)
