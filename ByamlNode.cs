@@ -501,9 +501,12 @@ namespace yamlconv
                     }
                     foreach (XmlAttribute item in xmlNode.Attributes)
                     {
-                        if (!nodes.Contains(item.Name))
-                            nodes.Add(item.Name);
-                        node.Nodes.Add(new KeyValuePair<int, ByamlNode>(nodes.IndexOf(item.Name), FromXml(doc, item, nodes, values, data)));
+                        if (item.Prefix != "xmlns" && item.NamespaceURI != "yamlconv")
+                        {
+                            if (!nodes.Contains(item.Name))
+                                nodes.Add(item.Name);
+                            node.Nodes.Add(new KeyValuePair<int, ByamlNode>(nodes.IndexOf(item.Name), FromXml(doc, item, nodes, values, data)));
+                        }
                     }
                     return node;
                 }

@@ -68,40 +68,50 @@ namespace yamlconv
             if (reader.ReadUInt32() != 0x42590001)
                 throw new InvalidDataException();
 
-            uint[] offsets = reader.ReadUInt32s(4);
+            uint nodeOffset = reader.ReadUInt32();
+            if (nodeOffset > reader.BaseStream.Length)
+                throw new InvalidDataException();
 
-            if (offsets[0] > reader.BaseStream.Length)
+            // Number of offset values.
+            // Splatoon byamls are missing dataOffset.
+            uint offsetCount = nodeOffset == 0x10 ? 3u : 4u;
+
+            uint valuesOffset = reader.ReadUInt32();
+            if (valuesOffset > reader.BaseStream.Length)
                 throw new InvalidDataException();
-            if (offsets[1] > reader.BaseStream.Length)
+
+            uint dataOffset = offsetCount > 3 ? reader.ReadUInt32() : 0;
+            if (dataOffset > reader.BaseStream.Length)
                 throw new InvalidDataException();
-            if (offsets[2] > reader.BaseStream.Length)
+
+            uint treeOffset = reader.ReadUInt32();
+            if (treeOffset > reader.BaseStream.Length)
                 throw new InvalidDataException();
-            if (offsets[3] > reader.BaseStream.Length)
-                throw new InvalidDataException();
+
 
             List<string> nodes = new List<string>();
             List<string> values = new List<string>();
             List<byte[]> data = new List<byte[]>();
 
-            if (offsets[0] != 0)
+            if (nodeOffset != 0)
             {
-                reader.BaseStream.Seek(offsets[0], SeekOrigin.Begin);
+                reader.BaseStream.Seek(nodeOffset, SeekOrigin.Begin);
                 nodes.AddRange(new ByamlNode.StringList(reader).Strings);
             }
-            if (offsets[1] != 0)
+            if (valuesOffset != 0)
             {
-                reader.BaseStream.Seek(offsets[1], SeekOrigin.Begin);
+                reader.BaseStream.Seek(valuesOffset, SeekOrigin.Begin);
                 values.AddRange(new ByamlNode.StringList(reader).Strings);
             }
-            if (offsets[2] != 0)
+            if (dataOffset != 0)
             {
-                reader.BaseStream.Seek(offsets[2], SeekOrigin.Begin);
+                reader.BaseStream.Seek(dataOffset, SeekOrigin.Begin);
                 data.AddRange(new ByamlNode.BinaryDataList(reader).DataList);
             }
 
             ByamlNode tree;
             ByamlNodeType rootType;
-            reader.BaseStream.Seek(offsets[3], SeekOrigin.Begin);
+            reader.BaseStream.Seek(treeOffset, SeekOrigin.Begin);
             rootType = (ByamlNodeType)reader.ReadByte();
             reader.BaseStream.Seek(-1, SeekOrigin.Current);
             if (rootType == ByamlNodeType.UnamedNode)
@@ -112,6 +122,12 @@ namespace yamlconv
             XmlDocument yaml = new XmlDocument();
             yaml.AppendChild(yaml.CreateXmlDeclaration("1.0", "UTF-8", null));
             XmlElement root = yaml.CreateElement("yaml");
+            XmlAttribute xmlnsAttribute = yaml.CreateAttribute("xmlns:yamlconv");
+            xmlnsAttribute.InnerText = "yamlconv";
+            root.Attributes.Append(xmlnsAttribute);
+            XmlAttribute offsetCountAttribute = yaml.CreateAttribute("offsetCount", "yamlconv");
+            offsetCountAttribute.InnerText = offsetCount.ToString();
+            root.Attributes.Append(offsetCountAttribute);
             yaml.AppendChild(root);
 
             tree.ToXml(yaml, root, nodes, values, data);
@@ -129,6 +145,10 @@ namespace yamlconv
 
             if (doc.LastChild.Name != "yaml")
                 throw new InvalidDataException();
+
+            uint offsetCount = 4;
+            if (doc.LastChild.Attributes["yamlconv:offsetCount"] != null)
+                offsetCount = uint.Parse(doc.LastChild.Attributes["yamlconv:offsetCount"].Value);
 
             List<string> nodes = new List<string>();
             List<string> values = new List<string>();
@@ -188,14 +208,14 @@ namespace yamlconv
 
             using (EndianBinaryWriter writer = new EndianBinaryWriter(new FileStream(outpath, FileMode.Create)))
             {
-                uint[] off = new uint[4];
+                uint[] off = new uint[offsetCount];
 
                 for (int i = 0; i < 2; i++)
                 {
                     writer.BaseStream.Position = 0;
 
                     writer.Write(0x42590001);
-                    writer.Write(off, 0, 4);
+                    writer.Write(off, 0, (int)offsetCount);
 
                     if (sorted_nodes.Count > 0)
                     {
@@ -235,7 +255,7 @@ namespace yamlconv
                     else
                         off[1] = 0;
 
-                    if (data.Count > 0)
+                    if (offsetCount > 3 && data.Count > 0)
                     {
                         off[2] = (uint)writer.BaseStream.Position;
 
@@ -258,7 +278,7 @@ namespace yamlconv
                     else
                         off[2] = 0;
 
-                    off[3] = (uint)writer.BaseStream.Position;
+                    off[off.Length - 1] = (uint)writer.BaseStream.Position;
 
                     foreach (var current in flat)
                     {
