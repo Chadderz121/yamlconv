@@ -19,6 +19,7 @@ namespace yamlconv
         NamedNode = 0xc1,
         StringList = 0xc2,
         BinaryDataList = 0xc3,
+        Null = 0xff,
     }
 
     abstract class ByamlNode
@@ -264,6 +265,9 @@ namespace yamlconv
                             reader.BaseStream.Position = reader.ReadInt32();
                             Nodes.Add(new NamedNode(reader));
                             break;
+                        case ByamlNodeType.Null:
+                            Nodes.Add(new Null(reader));
+                            break;
                         default:
                             throw new InvalidDataException();
                     }
@@ -341,6 +345,9 @@ namespace yamlconv
                         case ByamlNodeType.NamedNode:
                             reader.BaseStream.Position = reader.ReadInt32();
                             Nodes.Add(new KeyValuePair<int, ByamlNode>(name, new NamedNode(reader)));
+                            break;
+                        case ByamlNodeType.Null:
+                            Nodes.Add(new KeyValuePair<int, ByamlNode>(name, new Null(reader)));
                             break;
                         default:
                             throw new InvalidDataException();
@@ -444,6 +451,32 @@ namespace yamlconv
             }
         }
 
+        public class Null : ByamlNode
+        {
+            public override ByamlNodeType Type
+            {
+                get { return ByamlNodeType.Null; }
+            }
+
+            public Null(EndianBinaryReader reader)
+            {
+                Address = reader.BaseStream.Position;
+
+                Length = reader.BaseStream.Position - Length;
+            }
+
+            public Null()
+            {
+            }
+
+            public override void ToXml(XmlDocument yaml, XmlNode node, List<string> nodes, List<string> values, List<byte[]> data)
+            {
+                XmlAttribute attr = yaml.CreateAttribute("type");
+                attr.Value = "null";
+                node.Attributes.Append(attr);
+            }
+        }
+
         public static ByamlNode FromXml(XmlDocument doc, XmlNode xmlNode, List<string> nodes, List<string> values, List<string> data)
         {
             XmlNode child = xmlNode.FirstChild;
@@ -486,6 +519,10 @@ namespace yamlconv
                     if (!data.Contains(value))
                         data.Add(value);
                     return new Data(data.IndexOf(value));
+                }
+                else if (xmlNode.Attributes["type"] != null && xmlNode.Attributes["type"].Value == "null")
+                {
+                    return new Null();
                 }
                 else
                 {

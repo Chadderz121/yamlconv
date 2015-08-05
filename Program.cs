@@ -333,6 +333,8 @@ namespace yamlconv
                                     case ByamlNodeType.NamedNode:
                                         writer.Write((int)item.Value.Address);
                                         break;
+                                    case ByamlNodeType.Null:
+                                        break;
                                     default:
                                         throw new NotImplementedException();
                                 }
@@ -367,6 +369,8 @@ namespace yamlconv
                                     case ByamlNodeType.UnamedNode:
                                     case ByamlNodeType.NamedNode:
                                         writer.Write((int)item.Address);
+                                        break;
+                                    case ByamlNodeType.Null:
                                         break;
                                     default:
                                         throw new NotImplementedException();
