@@ -580,7 +580,7 @@ namespace System.IO
             parser = GetParser(type);
             data = new byte[Marshal.SizeOf(type)];
 
-            using (var ms = new MemoryStream())
+            using (var ms = new MemoryStream(data))
             {
                 using (var rd = new BinaryReader(ms))
                 {
