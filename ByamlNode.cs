@@ -406,7 +406,10 @@ namespace yamlconv
                 foreach (var item in offsets)
                 {
                     reader.BaseStream.Seek(Address + item, SeekOrigin.Begin);
-                    Strings.Add(reader.ReadStringNT(Encoding.ASCII));
+                    string s = reader.ReadStringNT(Encoding.Default);
+                    byte[] data = Encoding.Default.GetBytes(s);
+                    string msg = Encoding.UTF8.GetString(data);
+                    Strings.Add(msg);
                 }
 
                 Length = reader.BaseStream.Position - Length;
