@@ -34,7 +34,8 @@ namespace yamlconv
                 string magic;
                 bool toyaml;
 
-                magic = reader.ReadString(Encoding.ASCII, 2);
+                magic = reader.ReadString(Encoding.Default, 2);
+                
                 if (magic == "BY")
                 {
                     toyaml = true;
